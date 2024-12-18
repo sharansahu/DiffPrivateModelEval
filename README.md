@@ -57,3 +57,7 @@ To visualize the cumulative regret for multiple algorithms:
 ```r
 plot_multiple_algos(list(dp_algo, lsvi_algo, dp_algo1, lsvi_algo1))
 ```
+
+## License
+
+This project is licensed under the MIT License. See the LICENSE file for details.
