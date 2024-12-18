@@ -1,0 +1,75 @@
+library(reticulate)
+library(here)
+
+# Set up the Python environment
+setup_python_environment <- function(envname = "r-reticulate") {
+  if (!reticulate::virtualenv_exists(envname)) {
+    message("Creating virtual environment: ", envname)
+    reticulate::virtualenv_create(envname)
+  }
+  reticulate::virtualenv_install(envname, packages = c("numpy"), ignore_installed = TRUE)
+  reticulate::use_virtualenv(envname, required = TRUE)
+}
+
+# Source the Python file
+source_dp_lsvi_ngo <- function() {
+  setup_python_environment()
+
+  # Define the Python file path
+  python_file <- here::here("inst/python/DP_LSVI_Ngo.py")
+
+  # Check if the file exists
+  if (!file.exists(python_file)) {
+    stop("Python file 'DP_LSVI_Ngo.py' not found in 'inst/python/'. Please check the file path.")
+  }
+
+  print(paste("Sourcing Python file:", python_file))
+
+  # Source the Python file
+  reticulate::source_python(python_file)
+  print("Python file sourced successfully.")
+
+  # Check if the DP_LSVI_Ngo class is defined
+  if (!reticulate::py_has_attr(reticulate::import_main(), "DP_LSVI_Ngo")) {
+    stop("DP_LSVI_Ngo class not found after sourcing the Python file.")
+  }
+
+  print("DP_LSVI_Ngo class successfully loaded.")
+}
+
+# Wrapper for the Python class
+create_DP_LSVI_Ngo <- function() {
+  source_dp_lsvi_ngo()
+
+  # Access the DP_LSVI_Ngo class
+  dp_lsvi_ngo <- reticulate::import_main()$DP_LSVI_Ngo()
+
+  # Define R wrapper functions
+  wrapper <- list(
+    get_model_name = function() dp_lsvi_ngo$get_model_name(),
+    get_H = function() dp_lsvi_ngo$get_H(),
+    run = function() dp_lsvi_ngo$run(),
+    compute_rewards = function() dp_lsvi_ngo$compute_rewards()
+  )
+
+  return(wrapper)
+}
+
+# Main script for testing
+tryCatch({
+  dp_lsvi_ngo <- create_DP_LSVI_Ngo()
+
+  # Get the model name
+  model_name <- dp_lsvi_ngo$get_model_name()
+  print(paste("Model Name:", model_name))
+
+  # Run the algorithm
+  dp_lsvi_ngo$run()
+
+  # Compute rewards
+  rewards <- dp_lsvi_ngo$compute_rewards()
+  print("Rewards:")
+  print(rewards)
+}, error = function(e) {
+  message("Error encountered: ", e$message)
+})
